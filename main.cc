@@ -24,102 +24,115 @@
 #define EPS 1e-6
 #define INF 1000000010
 #define pi acos(-1.0)
+#define maxn 100010
 #define mod 1000000007
-// #define mod 998244353
 typedef long long ll;
 typedef unsigned long long ull;
-const int maxn = 301000;
 const ll inf = (ll)(1e18+7);
 
 using namespace std;
 
-int w;
-vector<int64_t> a;
-int64_t ans[10];
+int t, m;
+vector<int> a[maxn];
+vector<int> e[maxn];
+int g[maxn];
+int c[maxn];
+int visited[maxn];
+int color[maxn];
+bool inloop[maxn];
+bool unbound;
 
 void init() {
-}
-
-bool check(int r1) {
-  ans[1] = r1;
-  int r3r4r5r6 = a[0] * 2 - a[1];
-  ans[2] = a[0] - ans[1] * 2 - r3r4r5r6;
-  ans[3] = a[2] - a[1] - ans[1] * 4;
-  ans[4] = a[3] - a[2] - ans[2] * 2 - ans[1] * 8;
-  ans[5] = a[4] - a[3] - ans[1] * 16;
-  ans[6] = a[4] - ans[1] * 32 - ans[2] * 4 - ans[3] * 2 - ans[4] * 2 - ans[5] * 2;
-  if (64 * ans[1] + 8 * ans[2] + 4 * ans[3] + 2 * ans[4] + 2 * ans[5] + 2 * ans[6] != a[5])
-    return false;
-  if (ans[1] >= 0 && ans[2] >= 0 && ans[3] >= 0 && ans[4] >= 0 && ans[5] >= 0 && ans[6] >= 0 &&
-    ans[1] <= 100 && ans[2] <= 100 && ans[3] <= 100 && ans[4] <= 100 && ans[5] <= 100 && ans[6] <= 100 &&
-    ans[1] + ans[2] + ans[3] + ans[4] + ans[5] + ans[6] > 0) {
-    return true;
+  cin >> m;
+  memset(a, 0, sizeof(a));
+  memset(e, 0, sizeof(e));
+  for (int i = 0; i < maxn; ++i) {
+    a[i].clear();
+    e[i].clear();
   }
-  return false;
+  memset(g, 0, sizeof(g));
+  memset(c, 0, sizeof(c));
+  memset(visited, 0, sizeof(visited));
+  memset(inloop, 0, sizeof(inloop));
+  unbound = false;
+  for (int i = 0; i < m; ++i) {
+    int x, y;
+    cin >> x >> y;
+    a[i + 1].pb(x);
+    a[i + 1].pb(y);
+    e[x].pb(i + 1);
+    e[y].pb(i + 1);
+  }
+  for (int i = 0; i < m; ++i) {
+    cin >> g[i + 1];
+    c[i + 1] = g[i + 1] > 0;
+  }
 }
 
-void bf(int64_t x54l, int64_t x162l) {
-  for (int i = 0; i <= 100; ++i) {
-    ans[5] = i;
-    ans[6] = (x54l - (ans[5] << 10)) >> 9;
-    if ((ans[5] << 10) + (ans[6] << 9) != x54l || (ans[5] << 32) + (ans[6] << 27) != x162l)
-      continue;
-    if (ans[5] >= 0 && ans[5] <= 100 && ans[6] >= 0 && ans[6] <= 100 &&
-      ans[1] + ans[2] + ans[3] + ans[4] + ans[5] + ans[6] > 0) {
-      break;
+int dfs(int u) {
+  if (u == 0) return 0;
+  visited[u] = 1;
+  for (int i = 0; i < e[u].size(); ++i) {
+    int v = e[u][i];
+    if (!visited[v]) {
+      dfs(v);
+    } else {
+      inloop[v] = true;
+      inloop[u] = true;
     }
   }
+  visited[u] = 0;
 }
 
-int64_t solve() {
-  if (w == 6) {
-    a.clear();
-    for (int i = 0; i < 6; ++i) {
-      cout << i + 1 << endl;
-      cout.flush();
-      int64_t x;
-      cin >> x;
-      a.pb(x);
+int acc(int u) {
+  if (u == 0) return 0;
+  visited[u] = 1;
+  for (int i = 0; i < e[u].size(); ++i) {
+    int v = e[u][i];
+    if (!visited[v]) {
+      acc(v);
     }
-    for (int i = 0; i <= 100; ++i)
-      if (check(i))
-        break;
-  } else {
-    a.clear();
-    cout << 54 << endl;
-    cout.flush();
-    int64_t x54;
-    cin >> x54;
-    cout << 162 << endl;
-    cout.flush();
-    int64_t x162;
-    cin >> x162;
-    ans[1] = x54 >> 54;
-    // cout << ans[1] << endl;
-    ans[2] = (x54 >> 27) - (ans[1] << 27);
-    // cout << (x54 >> 27) << " " << ans[2] << endl;
-    ans[3] = (x162 >> 54);
-    ans[4] = (x162 >> 40) - (ans[3] << 14);
-    int64_t x54l = x54 - (ans[1] << 54) - (ans[2] << 27) - (ans[3] << 18) - (ans[4] << 13);
-    int64_t x162l = x162 - (ans[3] << 54) - (ans[4] << 40);
-    bf(x54l, x162l);
+    c[a[v][0]] = c[a[v][0]] || c[v];
+    c[a[v][1]] = c[a[v][1]] || c[v];
+    g[a[v][0]] = (g[a[v][0]] + g[v]) % mod;
+    g[a[v][1]] = (g[a[v][1]] + g[v]) % mod;
+    if (a[v][0] != v && a[v][1] != v) {
+      g[v] = 0;
+    }
   }
-  return 0;
+  if (inloop[u] && c[u]) {
+    unbound = true;
+  }
+}
+
+void solve() {
+  dfs(1);
+  memset(visited, 0, sizeof(visited));
+  acc(1);
+  if (unbound) {
+    int cur = g[1];
+    memset(visited, 0, sizeof(visited));
+    acc(1);
+    if (cur == g[1]) {
+      unbound = false;
+    }
+    // cout << cur << " " << g[1] << endl;
+  }
 }
 
 int main() {
-  // freopen("in.txt", "r", stdin);
-  std::cout.setf( std::ios_base::unitbuf );
-  int t;
+  freopen("in.txt", "r", stdin);
   cin >> t;
-  cin >> w;
   for (int i = 0; i < t; ++i) {
     init();
     solve();
-    cout << ans[1] << " " << ans[2] << " " << ans[3] << " " << ans[4] << " " << ans[5] << " " << ans[6] << endl;
-    cout.flush();  
-    int x;
-    cin >> x;
-    assert(x != -1);
+    if (unbound) {
+      cout << "Case #" << i + 1 << ": UNBOUNDED" << endl;
+    } else {
+      if (g[1] < 0)
+        g[1] += mod;
+      cout << "Case #" << i + 1 << ": " << g[1] << endl;
+    }
   }
+  return 0;
 }
